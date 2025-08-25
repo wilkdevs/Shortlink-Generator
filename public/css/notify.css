@@ -1,0 +1,39 @@
+/* Custom CSS for notify.js positioning */
+
+/* Default positioning for desktop */
+.notifyjs-corner {
+    top: 20px !important;
+    right: 20px !important;
+    left: auto !important;
+}
+
+/* --- */
+
+/* Mobile-specific adjustments */
+@media (max-width: 768px) {
+    .notifyjs-corner {
+        top: 10px !important;
+        right: 10px !important;
+        left: 10px !important;
+        width: auto !important;
+        margin: 0 !important;
+    }
+
+    .notifyjs-container {
+        width: 100% !important;
+        padding: 8px !important;
+    }
+
+    .notifyjs-arrow {
+        display: none !important;
+    }
+
+    .notifyjs-container .notifyjs-success,
+    .notifyjs-container .notifyjs-error {
+        font-size: 14px !important;
+        padding: 10px 15px !important;
+        text-align: center !important;
+        white-space: normal !important;
+        word-wrap: break-word !important;
+    }
+}

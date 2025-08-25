@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{{ isset($metatag) ? $metatag['title'] : env('APP_NAME') }}</title>
+    <meta name="title" content="{{ isset($metatag) ? $metatag['title'] : env('APP_NAME') }}">
+    <meta name="description" content="{{ isset($metatag) ? $metatag['desc'] : env('APP_DESC') }}">
+    <meta name="keywords" content="{{ isset($metatag) ? $metatag['keyword'] : env('APP_KEYWORD') }}">
+    <link rel="icon" type="image/png" href="{{ isset($settings['faviconImage']) ? $settings['faviconImage'] : $settings['faviconImageDefault'] }}">
+    <link rel="canonical" href="{{ url()->full() }}">
+
+    <link rel="stylesheet" href="/css/index.css?v=12">
+    <link rel="stylesheet" href="/css/notify.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="container">
+            <div class="logo">{{ $settings["websiteName"] }}</div>
+            <nav class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#about">About Us</a>
+            </nav>
+
+            @if (auth()->check())
+                <button class="btn dashboard-btn" id="login-btn">Dashboard</button>
+            @else
+                <button class="btn login-btn" id="login-btn">Log in</button>
+            @endif
+
+            <button class="menu-toggle">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="hero">
+        <div class="container">
+            <h1 class="hero-title">Make Every Link Work for You.</h1>
+            <p class="hero-subtitle">Say goodbye to long, messy URLs. Create professional, trackable short links to gain insights and reach your audience, easily and for free.</p>
+            <div class="shorten-form">
+                <input type="text" placeholder="Paste your long URL here" class="url-input" />
+                <button class="btn btn-action">&rarr;</button>
+            </div>
+            <div class="advanced-options">
+                <input type="checkbox" id="advanced" class="checkbox" />
+                <label for="advanced">Show advanced options</label>
+            </div>
+        </div>
+    </main>
+
+    <section class="features-section" id="features">
+        <div class="container">
+            <h2>Why {{ $settings["websiteName"] }}?</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <i class="fa-solid fa-chart-line icon"></i>
+                    <h3>Analytics</h3>
+                    <p>Track clicks, referrers, and locations to understand your audience better.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fa-solid fa-star icon"></i>
+                    <h3>Custom Links</h3>
+                    <p>Create branded, memorable short links that stand out from the crowd.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fa-solid fa-lock icon"></i>
+                    <h3>Secure & Reliable</h3>
+                    <p>Our platform is built for security and offers 99.9% uptime.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="about-section" id="about">
+        <div class="container">
+            <h2>About Us</h2>
+            <p>{{ $settings["websiteName"] }} is a modern, open-source link management platform designed for developers and marketers. Our mission is to provide a fast, secure, and feature-rich solution for shortening and managing URLs. We believe in simplicity and powerful tools that help you achieve your goals.</p>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-links">
+                    <a href="#">Terms of Service</a>
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Contact</a>
+                </div>
+                <div class="copyright">
+                    Ver. 2.7.101 Copyright © 2025 {{ $settings["websiteName"] }}
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/utils.js"></script>
+    <script src="js/index.js?v=14"></script>
+
+    @if(session()->has('success'))
+        <script type="text/javascript">
+            $(document).ready(function() {
+                $.notify('{{ session('success') }}', 'success');
+            });
+        </script>
+    @endif
+
+    @if(session()->has('failed') || session()->has('error'))
+        <script type="text/javascript">
+            $(document).ready(function() {
+                $.notify('{{ session('failed') ?? session('error') }}', 'error');
+            });
+        </script>
+    @endif
+
+</body>
+</html>

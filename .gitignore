@@ -15,16 +15,37 @@ public/hot
 public_html/storage
 public_html/hot
 
-storage/*.key
+# Laravel sensitive files
 .env
+.env.backup
+.env.production
+storage/*.key
 Homestead.yaml
 Homestead.json
 /.vagrant
 .phpunit.result.cache
-
-/public/build
-/storage/pail
-.env.backup
-.env.production
 .phpactor.json
 auth.json
+
+# Laravel build artifacts
+/public/build
+/storage/pail
+
+# Laravel framework cache/views/sessions
+/storage/framework/cache/*
+!/storage/framework/cache/.gitkeep
+
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitkeep
+
+/storage/framework/views/*
+!/storage/framework/views/.gitkeep
+
+/public/storage/*
+!/public/storage/.gitkeep
+
+/public/files/*
+!/public/files/.gitkeep
+
+*.sql
+
