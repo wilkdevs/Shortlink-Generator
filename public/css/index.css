@@ -506,6 +506,82 @@ h2::after {
     box-shadow: 0 6px 20px rgba(240, 68, 16, 0.5);
 }
 
+/* Styling for the advanced form container */
+.advanced-form {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.5s ease-in-out, opacity 0.5s ease-in-out;
+    padding: 1.5rem 0; /* Add top and bottom padding for space */
+}
+
+.advanced-form.active {
+    max-height: 200px;
+    opacity: 1;
+}
+
+/* Heading for the form */
+.form-heading {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 0.8rem;
+}
+
+/* Grid layout for the form fields */
+.form-fields-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem; /* Increased gap for better spacing */
+    align-items: end;
+}
+
+/* General form group styling */
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Label and input styling */
+.form-group label {
+    font-weight: 500;
+    margin-bottom: 0.4rem;
+    color: #555;
+}
+
+/* Styling for the input fields */
+.form-control {
+    width: 100%;
+    padding: 0.8rem 0;
+    border: none;
+    border-bottom: 2px solid #e0e0e0; /* Subtle light gray border */
+    font-size: 0.95rem;
+    color: #333;
+    background: transparent;
+    transition: border-bottom-color 0.3s ease-in-out; /* Add transition for a smooth effect */
+}
+
+/* Focus state with a new color */
+.form-control:focus {
+    outline: none;
+    border-bottom-color: #007bff; /* A clean blue highlight */
+}
+
+/* Optional: Add a placeholder style for better legibility */
+.form-control::placeholder {
+    color: #999;
+    opacity: 0.8;
+}
+
+/* Remove default spinner from number input */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 @media (max-width: 480px) {
     .login-card {
         padding: 2rem 1.5rem;

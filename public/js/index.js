@@ -26,3 +26,47 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+document.addEventListener('DOMContentLoaded', function() {
+    const advancedCheckbox = document.getElementById('advanced');
+    const advancedForm = document.getElementById('advanced-form');
+    const urlInput = document.querySelector('.url-input');
+    const shortenButton = document.querySelector('.btn-action');
+
+    const isLoggedIn = document.querySelector('.dashboard-btn') !== null;
+
+    // Listen for changes on the advanced options checkbox
+    advancedCheckbox.addEventListener('change', function() {
+        if (!isLoggedIn) {
+            alert('Advanced options are available for logged-in users.');
+            return;
+        }
+
+        if (this.checked) {
+            advancedForm.classList.add('active');
+        } else {
+            advancedForm.classList.remove('active');
+        }
+    });
+
+    // Listen for clicks on the main shorten button
+    if (shortenButton) {
+        shortenButton.addEventListener('click', function(event) {
+            event.preventDefault();
+
+            if (advancedForm && advancedForm.classList.contains('active')) {
+                const advancedUrlInput = document.getElementById('advanced-url-input');
+                if (advancedUrlInput) {
+                    advancedUrlInput.value = urlInput.value;
+                }
+
+                const advancedLinkform = document.getElementById('advanced-link-form');
+                if (advancedLinkform) {
+                    advancedLinkform.submit();
+                }
+            } else {
+                console.log('Performing simple URL shortening for:', urlInput.value);
+            }
+        });
+    }
+});

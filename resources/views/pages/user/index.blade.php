@@ -43,13 +43,36 @@
         <div class="container">
             <h1 class="hero-title">Make Every Link Work for You.</h1>
             <p class="hero-subtitle">Say goodbye to long, messy URLs. Create professional, trackable short links to gain insights and reach your audience, easily and for free.</p>
-            <div class="shorten-form">
-                <input type="text" placeholder="Paste your long URL here" class="url-input" />
-                <button class="btn btn-action">&rarr;</button>
-            </div>
-            <div class="advanced-options">
-                <input type="checkbox" id="advanced" class="checkbox" />
-                <label for="advanced">Show advanced options</label>
+
+            <div class="shorten-container">
+                <div class="shorten-form">
+                    <input type="text" placeholder="Paste your long URL here" class="url-input" />
+                    <button class="btn btn-action">&rarr;</button>
+                </div>
+
+                <div class="advanced-options">
+                    <input type="checkbox" id="advanced" class="checkbox" />
+                    <label for="advanced">Show advanced options</label>
+                </div>
+
+                @if (auth()->check())
+                    <div class="advanced-form" id="advanced-form">
+                        <form id="advanced-link-form" action="/admin/link/create" method="post">
+                            @csrf
+                            <input type="hidden" name="long_url" id="advanced-url-input">
+                            <div class="form-fields-grid">
+                                <div class="form-group">
+                                    <label for="link_length">Link Length:</label>
+                                    <input type="number" id="link_length" name="link_length" min="1" max="100" value="6" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label for="title">Title:</label>
+                                    <input type="text" id="title" name="title" value="-" class="form-control">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                @endif
             </div>
         </div>
     </main>
