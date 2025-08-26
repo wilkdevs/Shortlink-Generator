@@ -11,7 +11,7 @@
     <link rel="icon" type="image/png" href="{{ isset($settings['faviconImage']) ? $settings['faviconImage'] : $settings['faviconImageDefault'] }}">
     <link rel="canonical" href="{{ url()->full() }}">
 
-    <link rel="stylesheet" href="/css/index.css?v=12">
+    <link rel="stylesheet" href="/css/index.css?v=15">
     <link rel="stylesheet" href="/css/notify.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -123,7 +123,7 @@
     </footer>
 
     <script src="js/utils.js"></script>
-    <script src="js/index.js?v=14"></script>
+    <script src="js/index.js?v=15"></script>
 
     @if(session()->has('success'))
         <script type="text/javascript">
