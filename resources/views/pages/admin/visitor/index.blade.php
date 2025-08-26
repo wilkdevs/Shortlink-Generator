@@ -1,145 +1,121 @@
 @extends('layouts.layout-admin')
 
 @section('content')
-    <style>
-        .no-sort::after {
-            display: none !important;
-        }
 
-        .no-sort {
-            pointer-events: none !important;
-            cursor: default !important;
-        }
-        td, th {
-            vertical-align: middle !important;
-        }
-
-        .pagination .page-link {
-            border-radius: 6px;
-            margin: 0 2px;
-            color: #5e72e4;
-            transition: all 0.2s ease;
-        }
-
-        .pagination .page-item.active .page-link {
-            background-color: #5e72e4;
-            border-color: #5e72e4;
-            color: #fff;
-        }
-
-        .pagination .page-link:hover {
-            background-color: #d4d9ff;
-        }
-    </style>
-
-    <div class="row" style="min-height: 74vh">
+    <div class="row min-vh-74">
         <div class="col-12 px-lg-4 px-0">
-            <div class="card">
+            <div class="card my-4 px-0">
                 <!-- Card header -->
-                <div class="card-header pb-0">
-                    <div class="d-lg-flex flex-column flex-lg-row">
-                        <div>
-                            <h5 class="mb-0">Daftar Hadiah</h5>
-                            <p class="text-sm mb-0">
-                                Manage, create new, delete, and edit here
-                            </p>
+                <div class="card-header-custom">
+                    <div>
+                        <h5>Daftar Pengunjung</h5>
+                        <p class="text-sm">
+                            Statistik untuk link <a target="_blank" href="{{ url($detail['short_url']) }}">{{ url($detail['short_url']) }}</a>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card-body px-0">
+                    <!-- Stats Section -->
+                    <div class="stats-section">
+                        <div class="stats-card">
+                            <h6>Total Pengunjung Unik</h6>
+                            <h4>{{ $visitorCount }}</h4>
                         </div>
+                        <div class="stats-card">
+                            <h6>Total Jumlah Klik</h6>
+                            <h4>{{ $clickCount }}</h4>
+                        </div>
+                    </div>
 
-                        <div class="ms-lg-auto mt-3 mt-lg-0 d-flex flex-column align-items-lg-end gap-2">
-                            <div class="d-flex gap-2">
-                                <a href="/admin/gift/new" class="btn bg-gradient-success btn-sm mb-0">+ Tambah Hadiah</a>
-                            </div>
-
-                            {{-- Category filter --}}
-                            <form method="GET">
-                                <select name="category_id" class="form-select form-select-sm" onchange="this.form.submit()">
-                                    <option value="">Semua Kategori</option>
-                                    @foreach ($categories as $category)
-                                        <option value="{{ $category->id }}" {{ $selectedCategory == $category->id ? 'selected' : '' }}>
-                                            {{ $category->name }}
+                    <!-- Filters Section -->
+                    <div class="filters-section">
+                        <form method="GET" action="{{ url()->current() }}" class="d-flex align-items-center gap-3">
+                            <!-- Country Filter -->
+                            <div class="filter-group">
+                                <label for="country-filter" class="filter-label d-none d-md-block">Negara:</label>
+                                <select name="country" onchange="this.form.submit()" class="filter-select">
+                                    <option value="">Semua Negara</option>
+                                    @foreach($countries as $country)
+                                        <option value="{{ $country->country }}" @if($selectedCountry == $country->country) selected @endif>
+                                            {{ $country->country }} ({{ $country->total_visitors }})
                                         </option>
                                     @endforeach
+                                </select>
+                            </div>
+                            <!-- Time Filter -->
+                            <div class="filter-group">
+                                <label for="time-filter" class="filter-label d-none d-md-block">Waktu:</label>
+                                <select name="time_filter" onchange="this.form.submit()" class="filter-select">
+                                    <option value="">Semua Waktu</option>
+                                    <option value="24h" @if(request('time_filter') == '24h') selected @endif>24 Jam Terakhir</option>
+                                    <option value="7d" @if(request('time_filter') == '7d') selected @endif>7 Hari Terakhir</option>
+                                    <option value="1m" @if(request('time_filter') == '1m') selected @endif>1 Bulan Terakhir</option>
+                                    <option value="1y" @if(request('time_filter') == '1y') selected @endif>1 Tahun Terakhir</option>
                                 </select>
                             </form>
                         </div>
                     </div>
-                </div>
 
-                <div class="card-body px-0 pb-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover table-striped align-middle mb-0">
-                            <thead class="bg-light">
-                                <tr>
-                                    <th class="text-center">No</th>
-                                    <th class="text-center">Gambar</th>
-                                    <th class="text-center">Nama Hadiah</th>
-                                    <th class="text-center">Kategori</th>
-                                    <th class="text-center">Persen Kemungkinan</th>
-                                    <th class="text-center">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse ($list as $index => $item)
-                                    <tr class="gift-row" data-name="{{ strtolower($item->name) }}"  data-id="{{ strtolower($item->id) }}">
-                                        <td class="text-center">{{ $list->firstItem() + $index }}</td>
+                    <!-- Two-column layout for chart and table -->
+                    <div class="row px-lg-4 px-4">
+                        <!-- Chart View (Left Column) -->
+                        <div class="col-12 col-md-6 mb-4 mb-md-0">
+                            <div class="card p-3">
+                                <h6 class="text-center mb-3">Tren Kunjungan Harian</h6>
+                                <div id="chart"></div>
+                            </div>
+                        </div>
 
-                                        <td class="text-center">
-                                            <img src="{{ asset($item->image) }}" alt="{{ $item->name }}"
-                                                class="rounded" width="50" height="50" style="object-fit: cover;">
-                                        </td>
-
-                                        <td class="text-center text-truncate" style="max-width: 120px;" title="{{ $item->name }}">
-                                            {{ $item->name }}
-                                        </td>
-
-                                        <td class="text-center">{{ $item->category->name ?? '-' }}</td>
-
-                                        <td class="text-center">
-                                            <span class="badge percent-success">
-                                                {{ $item->probability ?? '0' }}%
-                                            </span>
-                                        </td>
-
-                                        <td class="text-center">
-                                            <div class="d-flex justify-content-center gap-2">
-                                                <a href="/admin/gift/edit/{{ $item->id }}" class="text-primary"
-                                                data-bs-toggle="tooltip" title="Ubah Hadiah">
-                                                    <i class="material-icons">edit</i>
-                                                </a>
-                                                <a href="/admin/gift/delete/{{ $item->id }}" class="text-danger"
-                                                onclick="return confirm('Yakin ingin menghapus hadiah ini?')"
-                                                data-bs-toggle="tooltip" title="Hapus Hadiah">
-                                                    <i class="material-icons">delete</i>
-                                                </a>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td class="text-center text-muted" colspan="8">Tidak ada data hadiah.</td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-
-                        <div class="mt-4 d-flex justify-content-center">
-                            {{ $list->links() }}
+                        <!-- Table View (Right Column) -->
+                        <div class="col-12 col-md-6 px-0">
+                            <div class="table-container px-0">
+                                <table class="table" id="category-list">
+                                    <thead>
+                                        <tr>
+                                            <!-- <th class="text-center">No</th> -->
+                                            <th class="text-center">IP</th>
+                                            <th class="text-center">Negara</th>
+                                            <th class="text-center">Jumlah Klik</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse ($list as $index => $item)
+                                            <tr>
+                                                <!-- <td data-label="No" class="text-sm text-center">{{ $index + 1 }}</td> -->
+                                                <td data-label="IP" class="text-center text-truncate">{{ $item['ip'] }}</td>
+                                                <td data-label="Negara" class="text-center text-truncate">{{ $item['country'] }}</td>
+                                                <td data-label="Jumlah Klik" class="text-center">{{ $item['visitor_count'] }}</td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td class="text-center text-muted" colspan="6">
+                                                    Tidak ada data pengunjung.
+                                                </td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                                <div class="pagination-container">
+                                    {{ $list->links() }}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
 @endsection
 
 @section('script')
-    <script>
-        var server_settings = {!! json_encode($settings) !!};
+    <!-- ApexCharts CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
+    <script>
         function onChangeStatus(id) {
             const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-            const url = '/admin/gift/status'
+            const url = '/admin/link/status'
             const data = {
                 id: id
             };
@@ -157,6 +133,72 @@
             };
             xhr.send(JSON.stringify(data));
         }
-    </script>
 
+        document.addEventListener('DOMContentLoaded', function() {
+            const dailyVisitorsData = {!! json_encode($dailyVisitors) !!};
+
+            const categories = dailyVisitorsData.map(item => item.date);
+            const seriesData = dailyVisitorsData.map(item => item.count);
+
+            const options = {
+                chart: {
+                    type: 'line',
+                    height: 300,
+                    toolbar: {
+                        show: false
+                    },
+                    zoom: {
+                        enabled: false
+                    }
+                },
+                series: [{
+                    name: 'Total Klik',
+                    data: seriesData
+                }],
+                xaxis: {
+                    categories: categories,
+                    labels: {
+                        style: {
+                            fontSize: '12px'
+                        }
+                    },
+                    axisBorder: {
+                        show: false
+                    },
+                    axisTicks: {
+                        show: false
+                    }
+                },
+                yaxis: {
+                    title: {
+                        text: 'Jumlah Klik'
+                    },
+                    labels: {
+                        formatter: function(value) {
+                            return parseInt(value);
+                        }
+                    }
+                },
+                stroke: {
+                    curve: 'smooth',
+                    width: 2,
+                    colors: ['#3b5998']
+                },
+                markers: {
+                    size: 4,
+                    colors: ['#3b5998'],
+                    strokeColors: '#fff',
+                    hover: {
+                        size: 6
+                    }
+                },
+                grid: {
+                    show: false
+                }
+            };
+
+            const chart = new ApexCharts(document.querySelector("#chart"), options);
+            chart.render();
+        });
+    </script>
 @endsection

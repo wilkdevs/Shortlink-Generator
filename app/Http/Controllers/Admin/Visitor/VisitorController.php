@@ -1,196 +1,165 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Gift;
+namespace App\Http\Controllers\Admin\Visitor;
 
 use App\Http\Controllers\Controller;
-use App\Models\GiftModel;
-use App\Models\CategoryModel;
+use App\Models\VisitorModel;
+use App\Models\LinkModel;
 use App\Models\SettingModel;
 use Ramsey\Uuid\Uuid;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
-class GiftController extends Controller
+class VisitorController extends Controller
 {
 
-    public function index()
+    /**
+     * Display a list of visitors for a specific link, with optional country and time filters.
+     *
+     * @param  string  $short
+     * @return \Illuminate\Http\Response
+     */
+    public function index($short)
     {
-        $title = "Daftar Hadiah";
+        $detail = LinkModel::where('short_url', $short)->firstOrFail();
 
-        $categoryId = request('category_id');
+        $title = "Daftar Pengunjung untuk Link: " . $detail->title;
 
-        $query = GiftModel::with('category')
-            ->whereNull('deleted_at')
-            ->orderBy('created_at', 'DESC');
+        // Get selected filters from the request
+        $selectedCountry = request()->query('country');
+        $selectedTimeFilter = request()->query('time_filter');
+        $startDate = null;
 
-        if ($categoryId) {
-            $query->where('category_id', $categoryId);
-        }
-
-        $categories = CategoryModel::whereNull('deleted_at')->orderBy('created_at')->get();
-
-        $setting_list = SettingModel::all();
-
-        foreach ($setting_list as $item) {
-            if (($item['type'] == "image" || $item['type'] == "audio") && $item['value'] != NULL) {
-                $item['value'] = asset($item['value']);
+        // Determine the start date based on the time filter
+        if ($selectedTimeFilter) {
+            switch ($selectedTimeFilter) {
+                case '24h':
+                    $startDate = Carbon::now()->subDay();
+                    break;
+                case '7d':
+                    $startDate = Carbon::now()->subWeek();
+                    break;
+                case '1m':
+                    $startDate = Carbon::now()->subMonth();
+                    break;
+                case '1y':
+                    $startDate = Carbon::now()->subYear();
+                    break;
             }
-            $settings[$item->key] = $item->value;
-            $settings[$item->key . "Default"] = $item->default_value;
         }
 
-        return view('/pages/admin/gift/index', [
-            'list' => $query->paginate(10)->withQueryString(),
-            'categories' => $categories,
-            'selectedCategory' => $categoryId,
-            'title' => $title,
-            'settings' => $settings
-        ]);
-    }
+        // Prepare the base query for all counts and the list
+        $baseQuery = VisitorModel::where('link_id', $detail->id)
+            ->whereNull('deleted_at');
 
-    function new()
-    {
-        $title = "Tambah Hadiah";
+        // Apply country filter to the base query
+        if ($selectedCountry) {
+            $baseQuery->where('country', $selectedCountry);
+        }
 
-        $defaultFontFamily = '"Lucida Console", "Courier New", monospace';
+        // Apply time filter to the base query
+        if ($startDate) {
+            $baseQuery->where('created_at', '>=', $startDate);
+        }
 
-        $categories = CategoryModel::where('deleted_at', NULL)->orderBy('created_at')->get();
+        // Clone the base query to get the total click count
+        $clickCount = $baseQuery->count();
 
-        return view('/pages/admin/gift/form', [
-            'title' => $title,
-            'defaultFontFamily' => $defaultFontFamily,
-            'categories' => $categories,
-        ]);
-    }
+        // Clone the base query to get the unique visitor count
+        $visitorCount = $baseQuery->distinct('ip')->count('ip');
 
-    function edit($id)
-    {
-        $title = "Ubah Hadiah";
+        // Prepare the query for the main visitor list, grouping by IP
+        $visitorListquery = clone $baseQuery;
+        $visitorListquery = $visitorListquery->groupBy('ip')
+            ->select('ip', DB::raw('MAX(country) as country'), DB::raw('COUNT(ip) as visitor_count'))
+            ->orderBy('visitor_count', 'DESC');
 
-        $detail = GiftModel::where('id', $id)->first();
+        // Fetch daily visitor data for the chart
+        $dailyVisitors = clone $baseQuery;
+        $dailyVisitors = $dailyVisitors
+            ->select(DB::raw('DATE(created_at) as date'), DB::raw('COUNT(*) as count'))
+            ->groupBy('date')
+            ->orderBy('date', 'ASC')
+            ->get();
 
-        $categories = CategoryModel::where('deleted_at', NULL)->orderBy('created_at')->get();
+        // Fetch the list of countries for the dropdown filter
+        $visitorCountries = $detail->visitors()
+            ->select('country', DB::raw('count(*) as total_visitors'))
+            ->groupBy('country')
+            ->orderBy('total_visitors', 'DESC')
+            ->get();
 
-        return view('/pages/admin/gift/form', [
-            'categories' => $categories,
+        // Fetch settings data
+        $setting_list = SettingModel::where('active', 1)->get();
+        $setting = [];
+        foreach ($setting_list as $item) {
+            $setting[$item->key] = $item->value;
+        }
+
+        return view('/pages/admin/visitor/index', [
+            'setting' => $setting,
             'title' => $title,
             'detail' => $detail,
+            'visitorCount' => $visitorCount,
+            'clickCount' => $clickCount,
+            'countries' => $visitorCountries,
+            'selectedCountry' => $selectedCountry,
+            'list' => $visitorListquery->paginate(20)->withQueryString(),
+            'dailyVisitors' => $dailyVisitors, // Pass the new data to the view
         ]);
     }
 
-    function create(Request $request)
+    /**
+     * Redirects a short URL to its long URL and tracks the visit.
+     *
+     * @param string $short_url The unique short URL identifier.
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\Response
+     */
+    public function redirect(string $short_url)
     {
-        $request->validate([
-            'category_id' => 'required|uuid|exists:categories,id',
-            'name' => 'required|string|max:255|unique:gifts,name,NULL,id,deleted_at,NULL',
-            'image' => 'nullable|image|max:2048',
-            'probability' => 'nullable|integer',
-        ]);
+        // Find the link by its short_url field.
+        $link = LinkModel::where('short_url', $short_url)->first();
 
-        $data = $request->only([
-            'category_id',
-            'name',
-            'probability',
-        ]);
-
-        $data['id'] = Uuid::uuid4()->toString();
-        $data['active'] = 1;
-
-        if ($request->hasFile('image')) {
-            $urlFile = $request->file('image')->store('files');
-            $data['image'] = $urlFile;
+        if (!$link || $link->status == 0) {
+            return abort(404);
         }
 
-        GiftModel::create($data);
+        $ip = null;
 
-        session()->flash('success', 'Berhasil menambahkan hadiah!');
-        return redirect('/admin/gift/list');
-    }
+        try {
+            $ip_info_request = Http::timeout(3)->get('http://api.ipify.org?format=json');
+            $ip = $ip_info_request->json()['ip'];
+        } catch (\Exception $e) {
+            \Log::warning("find IP failed: " . $e->getMessage());
+        }
 
-    function update(Request $request)
-    {
-        $request->validate([
-            'id' => 'required|uuid|exists:gifts,id',
-            'category_id' => 'required|uuid|exists:categories,id',
-            'name' => 'required|string|max:255|unique:gifts,name,' . $request->id . ',id,deleted_at,NULL',
-            'image' => 'nullable|image|max:2048',
-            'probability' => 'nullable|integer',
-        ]);
+        if ($ip) {
+            try {
+                $response = Http::timeout(3)->get("http://ip-api.com/json/{$ip}?fields=status,country,countryCode");
 
-        $gift = GiftModel::findOrFail($request->id);
-
-        $data = $request->only([
-            'category_id',
-            'name',
-            'probability',
-        ]);
-
-        $data['slug'] = Str::slug($data['name']);
-
-        if ($request->hasFile('image')) {
-            // Delete old image if exists
-            if ($gift->image) {
-                Storage::delete($gift->image);
+                if ($response->successful() && $response->json('status') === 'success') {
+                    $country = $response->json('country') ?? 'Unknown';
+                }
+            } catch (\Exception $e) {
+                \Log::warning("IP lookup failed for {$ip}: " . $e->getMessage());
             }
 
-            $urlFile = $request->file('image')->store('files');
-            $data['image'] = $urlFile;
+            VisitorModel::create([
+                'id' => Uuid::uuid4()->toString(),
+                'link_id' => $link->id,
+                'ip' => $ip,
+                'country' => $country,
+                'payload' => json_encode([
+                    'user_agent' => request()->userAgent(),
+                    'referer'    => request()->headers->get('referer'),
+                ]),
+            ]);
         }
 
-        $gift->update($data);
-
-        session()->flash('success', 'Berhasil mengubah data gift!');
-        return redirect('/admin/gift/list');
-    }
-
-    function changeStatus(Request $request) {
-
-        $data = $request->all();
-
-        $name = GiftModel::where('id', $data['id'])->first();
-
-        $update = [];
-
-        if ($name->active == 1) {
-            $update['active'] = 0;
-        } else {
-            $update['active'] = 1;
-        }
-
-        GiftModel::where('id', $data['id'])->update($update);
-    }
-
-    function delete($id) {
-
-        GiftModel::where('id', $id)->update([
-            'deleted_at' => date("Y-m-d H:i:s")
-        ]);
-
-        return redirect('/admin/gift/list');
-    }
-
-    function deleteAll() {
-        GiftModel::whereNull('deleted_at')->update([
-            'deleted_at' => now()
-        ]);
-
-        return redirect('/admin/gift/list');
-    }
-
-    function duplicate($id) {
-
-        $name = GiftModel::find($id);
-
-        $newName = $name->replicate();
-
-        $newName->id = Uuid::uuid4()->toString();
-
-        $newName->save();
-
-        session()->flash('success', 'Berhasil menduplikat gift!');
-
-        return redirect('/admin/gift/list');
+        return redirect($link->long_url);
     }
 }

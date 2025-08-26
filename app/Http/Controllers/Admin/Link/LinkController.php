@@ -8,8 +8,8 @@ use App\Models\VisitorModel;
 use App\Models\SettingModel;
 use Ramsey\Uuid\Uuid;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class LinkController extends Controller
 {
@@ -18,10 +18,12 @@ class LinkController extends Controller
     {
         $title = "Daftar Link";
 
-        $list = LinkModel::where('deleted_at', NULL)
-                         ->withCount('visitors')
-                         ->orderBy('created_at', 'desc')
-                         ->get();
+        $query = LinkModel::whereNull('deleted_at')
+            ->withCount(['visitors as visitors_count' => function ($query) {
+                $query->select(DB::raw('count(distinct ip)'));
+            }])
+            ->withCount(['visitors as clicks_count'])
+            ->orderBy('created_at', 'DESC');
 
         $setting_list = SettingModel::where('active', 1)->get();
         $setting = [];
@@ -32,7 +34,7 @@ class LinkController extends Controller
         return view('/pages/admin/link/index', [
             'setting' => $setting,
             'title' => $title,
-            'list' => $list,
+            'list' => $query->paginate(20)->withQueryString(),
         ]);
     }
 
@@ -105,14 +107,14 @@ class LinkController extends Controller
 
         $data = $request->all();
 
-        $name = LinkModel::where('id', $data['id'])->first();
+        $link = LinkModel::where('id', $data['id'])->first();
 
         $update = [];
 
-        if ($name->active == 1) {
-            $update['active'] = 0;
+        if ($link->status == 1) {
+            $update['status'] = 0;
         } else {
-            $update['active'] = 1;
+            $update['status'] = 1;
         }
 
         LinkModel::where('id', $data['id'])->update($update);
@@ -148,61 +150,5 @@ class LinkController extends Controller
         session()->flash('success', 'Berhasil menduplikat link!');
 
         return redirect('/admin/link/list');
-    }
-
-    /**
-     * Redirects a short URL to its long URL and tracks the visit.
-     *
-     * @param string $short_url The unique short URL identifier.
-     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\Response
-     */
-    public function redirect(string $short_url)
-    {
-        // Find the link by its short_url field.
-        $link = LinkModel::where('short_url', $short_url)->first();
-
-        if (!$link) {
-            return abort(404);
-        }
-
-        $ip = null;
-
-        try {
-            $ip_info_request = Http::timeout(3)->get('http://api.ipify.org?format=json');
-            $ip = $ip_info_request->json()['ip'];
-        } catch (\Exception $e) {
-            \Log::warning("find IP failed: " . $e->getMessage());
-        }
-
-        // Check if this IP has already visited this link.
-        $is_existing_visitor = VisitorModel::where('link_id', $link->id)
-            ->where('ip', $ip)
-            ->exists();
-
-        // Only log a new visitor if it's not already recorded.
-        if (!$is_existing_visitor) {
-            try {
-                $response = Http::timeout(3)->get("http://ip-api.com/json/{$ip}?fields=status,country,countryCode");
-
-                if ($response->successful() && $response->json('status') === 'success') {
-                    $country = $response->json('country') ?? 'Unknown';
-                }
-            } catch (\Exception $e) {
-                \Log::warning("IP lookup failed for {$ip}: " . $e->getMessage());
-            }
-
-            VisitorModel::create([
-                'id' => Uuid::uuid4()->toString(),
-                'link_id' => $link->id,
-                'ip' => $ip,
-                'country' => $country,
-                'payload' => json_encode([
-                    'user_agent' => request()->userAgent(),
-                    'referer'    => request()->headers->get('referer'),
-                ]),
-            ]);
-        }
-
-        return redirect($link->long_url);
     }
 }

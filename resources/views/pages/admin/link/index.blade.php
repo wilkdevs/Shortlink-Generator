@@ -1,26 +1,12 @@
 @extends('layouts.layout-admin')
 
 @section('content')
-    <style>
-        .no-sort::after {
-            display: none !important;
-        }
-
-        .no-sort {
-            pointer-events: none !important;
-            cursor: default !important;
-        }
-        .max-width-cell {
-            max-width: 250px;
-        }
-    </style>
-
-    <div class="row" style="min-height: 74vh">
+    <div class="row min-vh-74">
         <div class="col-12 px-lg-4 px-0">
-            <div class="card">
+            <div class="card my-4">
                 <!-- Card header -->
-                <div class="card-header pb-0">
-                    <div class="d-lg-flex">
+                <div class="card-header-custom">
+                    <div class="d-lg-flex justify-content-lg-between align-items-center w-100">
                         <div>
                             <h5 class="mb-0">Daftar Link</h5>
                             <p class="text-sm mb-0">
@@ -37,11 +23,11 @@
                         <table class="table table-flush" id="category-list">
                             <thead class="thead-light">
                                 <tr>
-                                    <th class="text-center">No</th>
                                     <th class="text-center">Judul</th>
                                     <th class="text-center">Link Tujuan</th>
                                     <th class="text-center">Short Link</th>
                                     <th class="text-center">Pengunjung</th>
+                                    <th class="text-center">Jumlah Klik</th>
                                     <th class="text-center">Status</th>
                                     <th class="text-center no-sort">Aksi</th>
                                 </tr>
@@ -49,31 +35,38 @@
                             <tbody>
                                 @forelse ($list as $index => $item)
                                     <tr>
-                                        <td class="text-sm text-center">
-                                            {{ $index + 1 }}
-                                        </td>
-                                        <td class="text-center text-truncate">
+                                        <td class="text-center text-truncate" data-label="Judul">
                                             {{ $item['title'] }}
                                         </td>
-                                        <td class="text-center text-truncate max-width-cell">
-                                            <a href="{{ $item['long_url'] }}" target="_blank" class="table-link">
+                                        <td class="text-center max-width-cell md:text-truncate" data-label="Link Tujuan">
+                                            {{-- Desktop view --}}
+                                            <a href="{{ $item['long_url'] }}" target="_blank" class="table-link mobile-hide ">
                                                 {{ $item['long_url'] }}
                                             </a>
+                                            {{-- Mobile view --}}
+                                            <a href="{{ $item['long_url'] }}" target="_blank" class="table-link mobile-show">
+                                                View Link
+                                                <i class="material-icons text-secondary position-relative text-lg" style="font-size: 1.25rem;">open_in_new</i>
+                                            </a>
                                         </td>
-                                        <td class="text-center">
+                                        <td class="text-center" data-label="Short Link">
                                             <a href="{{ url($item['short_url']) }}" target="_blank" class="table-link">
                                                 {{ url($item['short_url']) }}
                                             </a>
                                         </td>
-                                        <td class="text-center">
-                                            <a href="{{ url('admin/link/' . $item->short_url . '/visitors') }}" target="_blank" class="table-link">
-                                                {{ $item['visitors_count'] ?? 0 }} (klik untuk lihat)
+                                        <td class="text-center" data-label="Pengunjung">
+                                            <a href="{{ url('admin/link/' . $item->short_url . '/visitors') }}" class="table-link visitor-cell">
+                                                <span style="margin-right: 8px;">{{ $item->visitors_count ?? 0 }}</span>
+                                                <i class="material-icons text-secondary position-relative text-lg">visibility</i>
                                             </a>
                                         </td>
-                                        <td class="text-center">
+                                        <td class="text-center text-truncate" data-label="Jumlah Klik">
+                                            {{ $item['clicks_count'] }}
+                                        </td>
+                                        <td class="text-center" data-label="Status">
                                             <input onclick="onChangeStatus('{{ $item->id }}')" type="checkbox" @if ($item->status == 1) checked @endif />
                                         </td>
-                                        <td class="text-sm text-center">
+                                        <td class="text-sm text-center" data-label="Aksi">
                                             <div class="d-flex align-items-center justify-content-center">
                                                 <a href="/admin/link/edit/{{ $item->id }}" data-bs-toggle="tooltip" data-bs-original-title="Ubah Link">
                                                     <i class="material-icons text-secondary position-relative text-lg">drive_file_rename_outline</i>
@@ -86,13 +79,17 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td class="text-center text-muted" colspan="6">
+                                        <td class="text-center text-muted" colspan="7">
                                             Tidak ada data link.
                                         </td>
                                     </tr>
                                 @endforelse
                             </tbody>
                         </table>
+
+                        <div class="mt-4 d-flex justify-content-center">
+                            {{ $list->links() }}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -104,7 +101,7 @@
     <script>
         function onChangeStatus(id) {
             const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-            const url = '/admin/gift/category/status'
+            const url = '/admin/link/status'
             const data = {
                 id: id
             };

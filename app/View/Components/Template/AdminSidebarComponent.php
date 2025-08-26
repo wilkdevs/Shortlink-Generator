@@ -38,16 +38,6 @@ class AdminSidebarComponent extends Component
         return ($this->current_route == "admin") ? "active" : "";
     }
 
-    public function isCodeVocherList()
-    {
-        return ($this->current_route == "admin/code-voucher") ? "active" : "";
-    }
-
-    public function isCodeVocherForm()
-    {
-        return ($this->current_route == "admin/code-voucher/new") ? "active" : "";
-    }
-
     public function isRouteParent($route)
     {
         return (str_contains($this->current_route, $route)) ? "active" : "";

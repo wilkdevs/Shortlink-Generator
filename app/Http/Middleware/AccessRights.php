@@ -19,76 +19,75 @@ class AccessRights
      */
     public function handle(Request $request, Closure $next)
     {
-        $user_id = auth()->user()->id;
+        // Check if the user is authenticated and is an active admin.
+        if (!Auth::check()) {
+            return abort(404);
+        }
 
-        $checkAdmin = AdminModel::withTrashed()
-            ->where('user_id', $user_id)
-            ->first();
+        $userId = auth()->user()->id;
+        $checkAdmin = AdminModel::withTrashed()->where('user_id', $userId)->first();
 
-        if (Auth::user() && $checkAdmin && $checkAdmin->deleted_at === null) {
-
-            $checkAccessRights = AccessRightsModel::where('admin_id', $checkAdmin['id'])->first();
-
-            if ($request->is('admin/link/*') && $checkAccessRights['links'] == 1) {
-                return $next($request);
-            } else if ($request->is('admin/setting/*') && $checkAccessRights['settings'] == 1) {
-                return $next($request);
-            } else if ($request->is('admin/staff/*') && $checkAccessRights['admin_staff'] == 1) {
-                return $next($request);
-            } else if ($request->is('admin/visitors/*') && $checkAccessRights['visitors'] == 1) {
-                return $next($request);
-            }
-
-            // Redirects when access is denied
-
-            // links access denied
-            else if ($request->is('admin/link/*')) {
-                if ($checkAccessRights['visitors'] == 1) {
-                    return redirect("/admin/visitors/list");
-                } else if ($checkAccessRights['admin_staff'] == 1) {
-                    return redirect("/admin/staff/list");
-                } else if ($checkAccessRights['settings'] == 1) {
-                    return redirect("/admin/setting/metatag");
-                }
-            }
-
-            // visitorss access denied
-            else if ($request->is('admin/visitors/*')) {
-                if ($checkAccessRights['links'] == 1) {
-                    return redirect("/admin/link/list");
-                } else if ($checkAccessRights['settings'] == 1) {
-                    return redirect("/admin/setting/metatag");
-                } else if ($checkAccessRights['admin_staff'] == 1) {
-                    return redirect("/admin/staff/list");
-                }
-            }
-
-            // Settings access denied
-            else if ($request->is('admin/setting/*')) {
-                if ($checkAccessRights['links'] == 1) {
-                    return redirect("/admin/link/list");
-                } else if ($checkAccessRights['visitors'] == 1) {
-                    return redirect("/admin/visitors/list");
-                } else if ($checkAccessRights['admin_staff'] == 1) {
-                    return redirect("/admin/staff/list");
-                }
-            }
-
-            // Staff access denied
-            else if ($request->is('admin/staff/*')) {
-                if ($checkAccessRights['links'] == 1) {
-                    return redirect("/admin/link/list");
-                } else if ($checkAccessRights['visitors'] == 1) {
-                    return redirect("/admin/visitors/list");
-                } else if ($checkAccessRights['settings'] == 1) {
-                    return redirect("/admin/settings/metatag");
-                }
-            }
-
-            // If no access to anything
+        // If the user is not an active admin, deny access.
+        if (!$checkAdmin || $checkAdmin->deleted_at !== null) {
             return abort(403, 'Unauthorized access.');
         }
 
-        return abort(404);
+        $checkAccessRights = AccessRightsModel::where('admin_id', $checkAdmin['id'])->first();
+
+        // If the user has no defined access rights, deny access.
+        if (!$checkAccessRights) {
+            return abort(403, 'Unauthorized access.');
+        }
+
+        // Define a mapping of route patterns to required permissions.
+        // The most specific routes are listed first to prevent general patterns
+        // from overriding specific ones.
+        $accessMap = [
+            'admin/link/*/visitors'  => 'visitors',  // Specific check for the visitors page
+            'admin/link/*'           => 'links',     // General check for all other link pages
+            'admin/setting/*'        => 'settings',
+            'admin/staff/*'          => 'admin_staff',
+        ];
+
+        // Flag to track if the user has permission to access the requested route.
+        $hasPermission = false;
+
+        // Check for access to the current route.
+        foreach ($accessMap as $routePattern => $permission) {
+            // Check if the current request URL matches the route pattern.
+            if ($request->is($routePattern)) {
+                // If a match is found, check if the user has the required permission.
+                if ($checkAccessRights[$permission] == 1) {
+                    $hasPermission = true;
+                    break; // Exit the loop since we found the most specific match
+                } else {
+                    // The user does not have permission for this specific route.
+                    // The flag remains false and the loop breaks.
+                    break;
+                }
+            }
+        }
+
+        // If the user has permission, allow the request to proceed.
+        if ($hasPermission) {
+            return $next($request);
+        }
+
+        // If the current route is denied, find the first accessible route and redirect.
+        // The order here determines the default redirect destination.
+        if ($checkAccessRights['links'] == 1) {
+            return redirect('/admin/link/list');
+        } else if ($checkAccessRights['admin_staff'] == 1) {
+            return redirect('/admin/staff/list');
+        } else if ($checkAccessRights['settings'] == 1) {
+            return redirect('/admin/setting/metatag');
+        } else if ($checkAccessRights['visitors'] == 1) {
+             // Redirect to the links list if only visitors access is available,
+             // as the visitor page requires a specific short URL.
+            return redirect('/admin/link/list');
+        }
+
+        // If the user has no access to any defined module, deny access.
+        return abort(403, 'Unauthorized access.');
     }
 }

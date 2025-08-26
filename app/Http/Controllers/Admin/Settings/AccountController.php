@@ -65,7 +65,8 @@ class AccountController extends Controller
         DB::table('access_rights')->insert([
             'id' => Uuid::uuid4()->toString(),
             'admin_id' => $adminId,
-            'code_voucher' => 1,
+            'links' => 1,
+            'visitors' => 1,
             'settings' => 1,
             'admin_staff' => 1
         ]);

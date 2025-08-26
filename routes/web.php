@@ -58,20 +58,10 @@ Route::group(['prefix' => 'admin'], function () {
         Route::get('/delete/{id}', [LinkController::class, 'delete'])->middleware(['auth', 'admin', 'access_rights']);
         Route::get('/delete-all', [LinkController::class, 'deleteAll'])->middleware(['auth', 'admin', 'access_rights']);
         Route::post('/status', [LinkController::class, 'changeStatus'])->middleware(['auth', 'admin', 'access_rights']);
+
+        Route::get('/{short}/visitors', [VisitorController::class, 'index'])->middleware(['auth', 'admin', 'access_rights']);
     });
 
-    Route::group(['prefix' => 'visitor'], function () {
-        Route::get('/list', [VisitorController::class, 'index'])->middleware(['auth', 'admin', 'access_rights']);
-        Route::get('/new', [VisitorController::class, 'new'])->middleware(['auth', 'admin', 'access_rights']);
-        Route::get('/edit/{id}', [VisitorController::class, 'edit'])->middleware(['auth', 'admin', 'access_rights']);
-        Route::post('/create', [VisitorController::class, 'create'])->middleware(['auth', 'admin', 'access_rights']);
-        Route::post('/upload', [VisitorController::class, 'upload'])->middleware(['auth', 'admin', 'access_rights']);
-        Route::post('/update', [VisitorController::class, 'update'])->middleware(['auth', 'admin', 'access_rights']);
-        Route::get('/duplicate/{id}', [VisitorController::class, 'duplicate'])->middleware(['auth', 'admin', 'access_rights']);
-        Route::get('/delete/{id}', [VisitorController::class, 'delete'])->middleware(['auth', 'admin', 'access_rights']);
-        Route::get('/delete-all', [VisitorController::class, 'deleteAll'])->middleware(['auth', 'admin', 'access_rights']);
-        Route::post('/status', [VisitorController::class, 'changeStatus'])->middleware(['auth', 'admin', 'access_rights']);
-    });
 
     Route::group(['prefix' => 'staff'], function () {
         Route::get('/list', [StaffController::class, 'index'])->middleware(['auth', 'admin', 'access_rights']);
@@ -108,7 +98,7 @@ Route::group(['prefix' => 'admin'], function () {
     });
 });
 
-Route::get('/{short_url}', [LinkController::class, 'redirect']);
+Route::get('/{short_url}', [VisitorController::class, 'redirect']);
 
 
 

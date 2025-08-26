@@ -24,7 +24,6 @@ return new class extends Migration
             $table->string('title')->nullable();
             $table->text('long_url');
             $table->string('short_url')->unique();
-            $table->unsignedBigInteger('count_click')->default(0);
             $table->boolean('status')->default(true); // active/inactive
 
             $table->timestamps();

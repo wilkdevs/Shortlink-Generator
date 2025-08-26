@@ -19,7 +19,6 @@
                         </svg>
                     </a>
                 </li>
-                {{--  <li class="breadcrumb-item text-sm"><a class="opacity-5 text-dark" href="javascript:;">Halaman</a></li>  --}}
                 <li class="breadcrumb-item text-sm text-dark active" aria-current="page">{{ $title }}</li>
             </ol>
         </nav>
@@ -45,7 +44,7 @@
                         </button>
                     </form>
                 </li>
-                <li class="nav-item d-xl-none ps-3 d-flex align-items-center">
+                <li class="nav-item ps-3 d-xl-none d-flex align-items-center">
                     <a href="javascript:;" class="nav-link text-body p-0" id="iconNavbarSidenav">
                       <div class="sidenav-toggler-inner">
                         <i class="sidenav-toggler-line"></i>
