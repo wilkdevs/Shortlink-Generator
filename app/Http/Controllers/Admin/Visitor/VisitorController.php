@@ -138,6 +138,10 @@ class VisitorController extends Controller
             }
         }
 
+        if (!request()->header('Accept') || !request()->header('Accept-Language')) {
+            return response('Forbidden', 403);
+        }
+
         // ---- IP FETCHING ----
         $ip = null;
         try {
