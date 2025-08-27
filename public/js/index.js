@@ -33,6 +33,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const urlInput = document.querySelector('.url-input');
     const shortenButton = document.querySelector('.btn-action');
 
+    const checkbox = document.getElementById('custom-link-checkbox');
+    const lengthGroup = document.getElementById('link-length-group');
+    const customGroup = document.getElementById('custom-link-group');
+
     const isLoggedIn = document.querySelector('.dashboard-btn') !== null;
 
     // Listen for changes on the advanced options checkbox
@@ -69,4 +73,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    checkbox.addEventListener('change', function() {
+        if (this.checked) {
+            lengthGroup.style.display = 'none';
+            customGroup.style.display = 'block';
+        } else {
+            lengthGroup.style.display = 'block';
+            customGroup.style.display = 'none';
+        }
+    });
 });

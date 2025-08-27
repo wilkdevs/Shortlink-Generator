@@ -121,22 +121,33 @@ class VisitorController extends Controller
      */
     public function redirect(string $short_url)
     {
-        // Find the link by its short_url field.
+        // Find the link
         $link = LinkModel::where('short_url', $short_url)->first();
 
         if (!$link || $link->status == 0) {
             return abort(404);
         }
 
-        $ip = null;
+        // ---- BOT DETECTION ----
+        $userAgent = request()->userAgent() ?? '';
+        $blockedAgents = ['curl', 'wget', 'python', 'http', 'bot', 'checker', 'spider'];
 
+        foreach ($blockedAgents as $agent) {
+            if (stripos($userAgent, $agent) !== false) {
+                return response('Forbidden', 403);
+            }
+        }
+
+        // ---- IP FETCHING ----
+        $ip = null;
         try {
             $ip_info_request = Http::timeout(3)->get('http://api.ipify.org?format=json');
-            $ip = $ip_info_request->json()['ip'];
+            $ip = $ip_info_request->json()['ip'] ?? null;
         } catch (\Exception $e) {
             \Log::warning("find IP failed: " . $e->getMessage());
         }
 
+        $country = 'Unknown';
         if ($ip) {
             try {
                 $response = Http::timeout(3)->get("http://ip-api.com/json/{$ip}?fields=status,country,countryCode");
@@ -149,17 +160,18 @@ class VisitorController extends Controller
             }
 
             VisitorModel::create([
-                'id' => Uuid::uuid4()->toString(),
-                'link_id' => $link->id,
-                'ip' => $ip,
-                'country' => $country,
-                'payload' => json_encode([
-                    'user_agent' => request()->userAgent(),
+                'id'       => Uuid::uuid4()->toString(),
+                'link_id'  => $link->id,
+                'ip'       => $ip,
+                'country'  => $country,
+                'payload'  => json_encode([
+                    'user_agent' => $userAgent,
                     'referer'    => request()->headers->get('referer'),
                 ]),
             ]);
         }
 
+        // ---- NORMAL REDIRECT ----
         return redirect($link->long_url);
     }
 }

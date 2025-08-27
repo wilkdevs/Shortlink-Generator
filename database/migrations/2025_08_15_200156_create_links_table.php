@@ -23,8 +23,9 @@ return new class extends Migration
 
             $table->string('title')->nullable();
             $table->text('long_url');
-            $table->string('short_url')->unique();
+            $table->string('short_url')->nullable();
             $table->boolean('status')->default(true); // active/inactive
+            $table->boolean('is_custom')->default(false);
 
             $table->timestamps();
             $table->softDeletes();

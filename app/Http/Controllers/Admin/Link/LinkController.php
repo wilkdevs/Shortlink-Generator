@@ -59,26 +59,46 @@ class LinkController extends Controller
         ]);
     }
 
-    function create(Request $request) {
-        $data = $request->only(['title', 'long_url', 'short_url_length']);
+    public function create(Request $request)
+    {
+        $data = $request->only(['title', 'long_url']);
+        $isCustom = $request->has('is_custom_link');
 
-        $linkLength = isset($data['short_url_length']) && is_numeric($data['short_url_length'])
-                    ? max(2, min(15, (int)$data['short_url_length']))
-                    : 6;
+        if ($isCustom && $request->filled('custom_short_url')) {
+            $customUrl = $request->input('custom_short_url');
+            $data['short_url'] = $customUrl;
+            $data['is_custom'] = true;
 
-        do {
-            $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-            $randomString = '';
-            for ($i = 0; $i < $linkLength; $i++) {
-                $randomString .= $characters[rand(0, strlen($characters) - 1)];
-            }
-            $data['short_url'] = $randomString;
-
-            $exists = LinkModel::where('short_url', $data['short_url'])
+            $exists = LinkModel::where('short_url', $customUrl)
                 ->whereNull('deleted_at')
                 ->exists();
 
-        } while ($exists);
+            if ($exists) {
+                session()->flash('error', 'Custom short URL already exists.');
+                return back();
+            }
+        } else {
+            $linkLength = isset($request->short_url_length) && is_numeric($request->short_url_length)
+                ? max(2, min(15, (int)$request->short_url_length))
+                : 6;
+
+            do {
+                $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                $randomString = '';
+                for ($i = 0; $i < $linkLength; $i++) {
+                    $randomString .= $characters[rand(0, strlen($characters) - 1)];
+                }
+                $shortUrl = $randomString;
+
+                $exists = LinkModel::where('short_url', $shortUrl)
+                    ->whereNull('deleted_at')
+                    ->exists();
+
+            } while ($exists);
+
+            $data['short_url'] = $shortUrl;
+            $data['is_custom'] = false;
+        }
 
         $data['id'] = Uuid::uuid4()->toString();
         $data['user_id'] = auth()->id();

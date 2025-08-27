@@ -20,7 +20,8 @@ class LinkModel extends Model
         'title',
         "long_url",
         "short_url",
-        "status"
+        "status",
+        "is_custom"
     ];
 
     protected $dates = ['deleted_at'];

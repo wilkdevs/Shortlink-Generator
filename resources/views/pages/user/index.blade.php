@@ -62,8 +62,20 @@
                             <input type="hidden" name="long_url" id="advanced-url-input">
                             <div class="form-fields-grid">
                                 <div class="form-group">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="custom-link-checkbox" name="is_custom_link">
+                                        <label class="form-check-label" for="custom-link-checkbox">
+                                            Custom Link
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="form-group" id="link-length-group">
                                     <label for="link_length">Link Length:</label>
-                                    <input type="number" id="link_length" name="link_length" min="1" max="100" value="6" class="form-control">
+                                    <input type="number" id="link_length" name="short_url_length" min="1" max="100" value="6" class="form-control">
+                                </div>
+                                <div class="form-group" id="custom-link-group" style="display: none;">
+                                    <label for="custom_short_url">Custom Short URL:</label>
+                                    <input type="text" id="custom_short_url" name="custom_short_url" class="form-control">
                                 </div>
                                 <div class="form-group">
                                     <label for="title">Title:</label>
@@ -122,8 +134,10 @@
         </div>
     </footer>
 
+    <script src="/js/core/jquery.3.2.1.min.js" type="text/javascript"></script>
+    <script src="/js/notify.min.js" integrity="sha512-efUTj3HdSPwWJ9gjfGR71X9cvsrthIA78/Fvd/IN+fttQVy7XWkOAXb295j8B3cmm/kFKVxjiNYzKw9IQJHIuQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="js/utils.js"></script>
-    <script src="js/index.js?v=15"></script>
+    <script src="js/index.js?v=16"></script>
 
     @if(session()->has('success'))
         <script type="text/javascript">

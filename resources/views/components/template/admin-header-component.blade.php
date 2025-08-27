@@ -27,6 +27,6 @@
 
     <link id="pagestyle" href="/assets/css/custom.css?v=2" rel="stylesheet" />
 
-    <link id="pagestyle" href="/css/admin.css?v=2" rel="stylesheet" />
+    <link id="pagestyle" href="/css/admin.css?v=3" rel="stylesheet" />
 
 </head>

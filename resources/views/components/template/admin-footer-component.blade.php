@@ -59,3 +59,11 @@ if (win && document.querySelector('#sidenav-scrollbar')) {
         });
     </script>
 @endif
+
+@if(session()->has('error'))
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $.notify('{{ session('error') }}', 'error');
+        });
+    </script>
+@endif
