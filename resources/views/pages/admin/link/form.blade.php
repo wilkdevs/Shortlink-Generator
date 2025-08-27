@@ -49,7 +49,8 @@
 
                 <div class="form-group" id="custom-link-group" style="display: none;">
                     <label for="custom-link" class="form-label">Link Kustom</label>
-                    <input type="text" id="custom-link" name="custom_short_url" class="form-input" placeholder="Misal: link-saya">
+                    <input type="text" id="custom-link" name="custom_short_url" class="form-input" placeholder="Misal: link-saya"
+                        value="{{ (isset($detail) && $detail->is_custom) ? $detail->short_url : '' }}">
                     <small class="text-muted">Gunakan karakter huruf, angka, dan tanda hubung (-). Panjang tidak terbatas.</small>
                 </div>
 

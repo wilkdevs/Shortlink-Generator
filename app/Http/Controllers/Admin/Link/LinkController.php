@@ -110,17 +110,46 @@ class LinkController extends Controller
         return redirect('/admin/link/list');
     }
 
-    function update(Request $request) {
+    public function update(Request $request)
+    {
+        // Find the existing link
+        $link = LinkModel::findOrFail($request->id);
 
-        $data = $request->all();
+        // Prepare the data for update
+        $data = [
+            'title' => $request->title,
+            'long_url' => $request->long_url,
+        ];
 
-        unset($data['_token']);
+        if ($request->has('is_custom_link') && $request->filled('custom_short_url')) {
+            $customUrl = $request->custom_short_url;
+            $data['short_url'] = $customUrl;
+            $data['is_custom'] = true;
 
-        LinkModel::where('id', $data['id'])->update($data);
+            $exists = LinkModel::where('short_url', $customUrl)
+                ->whereNull('deleted_at')
+                ->where('id', '!=', $request->id)
+                ->exists();
 
+            if ($exists) {
+                session()->flash('error', 'Custom short URL already exists.');
+                return back();
+            }
+        } else {
+            // If the user unchecks the custom link box, the short URL and is_custom flag should not be updated.
+            // This prevents accidental changes to the short URL, which would break existing links.
+            // We only update these fields if the user explicitly provides a new custom URL.
+            // To be safe, we'll keep the existing short URL and custom flag the same.
+        }
+
+        // Update the link in the database
+        $link->update($data);
+
+        // Flash a success message
         session()->flash('success', 'Successfully changed the link!');
 
-        return redirect('/admin/5/list');
+        // Redirect to the links list
+        return redirect('/admin/link/list');
     }
 
     function changeStatus(Request $request) {
