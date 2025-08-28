@@ -164,6 +164,9 @@ class VisitorController extends Controller
                     'referer'    => request()->headers->get('referer'),
                 ]),
             ]);
+
+            return redirect($link->long_url);
+
         } catch (\Exception $e) {
             \Log::warning("IP lookup failed for {$ip}: " . $e->getMessage());
             VisitorModel::create([
@@ -176,10 +179,8 @@ class VisitorController extends Controller
                     'referer'    => request()->headers->get('referer'),
                 ]),
             ]);
+
+            return redirect($link->long_url);
         }
-
-
-        // ---- NORMAL REDIRECT ----
-        return redirect($link->long_url);
     }
 }
