@@ -142,36 +142,31 @@ class VisitorController extends Controller
             return response('Forbidden', 403);
         }
 
-        // ---- IP FETCHING ----
-        $ip = request()->ip();
         try {
-            $response = Http::timeout(3)->get('https://ipinfo.io/json');
+            $response = Http::timeout(3)->get('http://ip-api.com/json/');
             $data = $response->json();
-            $ip = $data['ip'] ?? null;
-            $city = $data['city'] ?? null;
-            $region = $data['region'] ?? null;
+            $ip = $data['query'] ?? null;
             $country = $data['country'] ?? null;
-        } catch (\Exception $e) {
-            \Log::warning("Find IP failed: " . $e->getMessage());
-        }
-
-        $country = 'Unknown';
-        if ($ip) {
-            try {
-                $response = Http::timeout(3)->get("http://ip-api.com/json/{$ip}?fields=status,country,countryCode");
-
-                if ($response->successful() && $response->json('status') === 'success') {
-                    $country = $response->json('country') ?? 'Unknown';
-                }
-            } catch (\Exception $e) {
-                \Log::warning("IP lookup failed for {$ip}: " . $e->getMessage());
-            }
+            $city = $data['city'] ?? null;
 
             VisitorModel::create([
                 'id'       => Uuid::uuid4()->toString(),
                 'link_id'  => $link->id,
                 'ip'       => $ip,
                 'country'  => $country,
+                'payload'  => json_encode([
+                    'user_agent' => $userAgent,
+                    'referer'    => request()->headers->get('referer'),
+                ]),
+            ]);
+        } catch (\Exception $e) {
+            \Log::warning("Find IP failed: " . $e->getMessage());
+
+            VisitorModel::create([
+                'id'       => Uuid::uuid4()->toString(),
+                'link_id'  => $link->id,
+                'ip'       => "unknown",
+                'country'  => "unknown",
                 'payload'  => json_encode([
                     'user_agent' => $userAgent,
                     'referer'    => request()->headers->get('referer'),
