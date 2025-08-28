@@ -98,7 +98,8 @@ Route::group(['prefix' => 'admin'], function () {
     });
 });
 
-Route::get('/{short_url}', [VisitorController::class, 'redirect']);
+Route::post('/{short_url}', [VisitorController::class, 'open']);
+Route::get('/{short_url}', [VisitorController::class, 'loading']);
 
 
 

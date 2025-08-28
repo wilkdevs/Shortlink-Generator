@@ -113,16 +113,37 @@ class VisitorController extends Controller
         ]);
     }
 
+    public function loading(string $short_url)
+    {
+        // ---- BOT DETECTION ----
+        $userAgent = request()->userAgent() ?? '';
+        $blockedAgents = ['curl', 'wget', 'python', 'http', 'bot', 'checker', 'spider'];
+
+        foreach ($blockedAgents as $agent) {
+            if (stripos($userAgent, $agent) !== false) {
+                return response('Forbidden', 403);
+            }
+        }
+
+        if (!request()->header('Accept') || !request()->header('Accept-Language')) {
+            return response('Forbidden', 403);
+        }
+
+        return view('pages.user.loading', ['short_url' => $short_url]);
+    }
+
     /**
      * Redirects a short URL to its long URL and tracks the visit.
      *
      * @param string $short_url The unique short URL identifier.
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\Response
      */
-    public function redirect(string $short_url)
+    public function open(Request $request)
     {
+        $data = $request->all();
+
         // Find the link
-        $link = LinkModel::where('short_url', $short_url)->first();
+        $link = LinkModel::where('short_url', $data["short_url"])->first();
 
         if (!$link || $link->status == 0) {
             return abort(404);
@@ -143,11 +164,9 @@ class VisitorController extends Controller
         }
 
         // ---- IP FETCHING ----
-        $ip = 'Unknown';
+        $ip = $data['ip'] ?? 'Unknown';
         $country = 'Unknown';
         try {
-            $ip_info_request = Http::timeout(3)->get('https://api.bigdatacloud.net/data/client-ip');
-            $ip = $ip_info_request->json()['ipString'] ?? null;
             $response = Http::timeout(3)->get("http://ip-api.com/json/{$ip}?fields=status,country,countryCode");
 
             if ($response->successful() && $response->json('status') === 'success') {
@@ -165,7 +184,10 @@ class VisitorController extends Controller
                 ]),
             ]);
 
-            return redirect($link->long_url);
+            return response()->json([
+                'url' => $link->long_url,
+                'status' => true
+            ], 200);
 
         } catch (\Exception $e) {
             \Log::warning("IP lookup failed for {$ip}: " . $e->getMessage());
@@ -180,7 +202,10 @@ class VisitorController extends Controller
                 ]),
             ]);
 
-            return redirect($link->long_url);
+            return response()->json([
+                'url' => $link->long_url,
+                'status' => false
+            ], 200);
         }
     }
 }

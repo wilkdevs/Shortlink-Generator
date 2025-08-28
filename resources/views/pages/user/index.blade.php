@@ -140,12 +140,12 @@
     <script src="js/index.js?v=16"></script>
 
     <script>
-    fetch('https://api.bigdatacloud.net/data/client-ip')
-        .then(response => response.json())
-        .then(data => {
-            console.log("Your public IP is:", data);
-        })
-        .catch(err => console.error("Failed to get IP:", err));
+        fetch('https://api.bigdatacloud.net/data/client-ip')
+            .then(response => response.json())
+            .then(data => {
+                console.log("Your public IP is:", data);
+            })
+            .catch(err => console.error("Failed to get IP:", err));
     </script>
 
     @if(session()->has('success'))
