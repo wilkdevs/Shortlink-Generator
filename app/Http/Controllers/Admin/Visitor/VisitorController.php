@@ -143,24 +143,15 @@ class VisitorController extends Controller
         }
 
         // ---- IP FETCHING ----
-        $ip = request()->ip();
+        $ip = 'Unknown';
+        $country = 'Unknown';
         try {
             $ip_info_request = Http::timeout(3)->get('https://api.bigdatacloud.net/data/client-ip');
             $ip = $ip_info_request->json()['ipString'] ?? null;
-        } catch (\Exception $e) {
-            \Log::warning("find IP failed: " . $e->getMessage());
-        }
+            $response = Http::timeout(3)->get("http://ip-api.com/json/{$ip}?fields=status,country,countryCode");
 
-        $country = 'Unknown';
-        if ($ip) {
-            try {
-                $response = Http::timeout(3)->get("http://ip-api.com/json/{$ip}?fields=status,country,countryCode");
-
-                if ($response->successful() && $response->json('status') === 'success') {
-                    $country = $response->json('country') ?? 'Unknown';
-                }
-            } catch (\Exception $e) {
-                \Log::warning("IP lookup failed for {$ip}: " . $e->getMessage());
+            if ($response->successful() && $response->json('status') === 'success') {
+                $country = $response->json('country') ?? 'Unknown';
             }
 
             VisitorModel::create([
@@ -173,18 +164,20 @@ class VisitorController extends Controller
                     'referer'    => request()->headers->get('referer'),
                 ]),
             ]);
-        } else {
+        } catch (\Exception $e) {
+            \Log::warning("IP lookup failed for {$ip}: " . $e->getMessage());
             VisitorModel::create([
                 'id'       => Uuid::uuid4()->toString(),
                 'link_id'  => $link->id,
-                'ip'       => "unknown",
-                'country'  => "unknown",
+                'ip'       => $ip,
+                'country'  => $country,
                 'payload'  => json_encode([
                     'user_agent' => $userAgent,
                     'referer'    => request()->headers->get('referer'),
                 ]),
             ]);
         }
+
 
         // ---- NORMAL REDIRECT ----
         return redirect($link->long_url);
