@@ -144,12 +144,16 @@ class VisitorController extends Controller
 
         // ---- IP FETCHING ----
         $ip = request()->ip();
-        // try {
-        //     $ip_info_request = Http::timeout(3)->get('http://api.ipify.org?format=json');
-        //     $ip = $ip_info_request->json()['ip'] ?? null;
-        // } catch (\Exception $e) {
-        //     \Log::warning("find IP failed: " . $e->getMessage());
-        // }
+        try {
+            $response = Http::timeout(3)->get('https://ipinfo.io/json');
+            $data = $response->json();
+            $ip = $data['ip'] ?? null;
+            $city = $data['city'] ?? null;
+            $region = $data['region'] ?? null;
+            $country = $data['country'] ?? null;
+        } catch (\Exception $e) {
+            \Log::warning("Find IP failed: " . $e->getMessage());
+        }
 
         $country = 'Unknown';
         if ($ip) {
