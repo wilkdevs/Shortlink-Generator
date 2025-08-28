@@ -139,6 +139,15 @@
     <script src="js/utils.js"></script>
     <script src="js/index.js?v=16"></script>
 
+    <script>
+    fetch('https://api.ipify.org?format=json')
+        .then(response => response.json())
+        .then(data => {
+            console.log("Your public IP is:", data.ip);
+        })
+        .catch(err => console.error("Failed to get IP:", err));
+    </script>
+
     @if(session()->has('success'))
         <script type="text/javascript">
             $(document).ready(function() {
