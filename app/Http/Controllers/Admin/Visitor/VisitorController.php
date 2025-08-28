@@ -142,12 +142,26 @@ class VisitorController extends Controller
             return response('Forbidden', 403);
         }
 
-        try {
-            $response = Http::timeout(3)->get('http://ip-api.com/json/');
-            $data = $response->json();
-            $ip = $data['query'] ?? null;
-            $country = $data['country'] ?? null;
-            $city = $data['city'] ?? null;
+        // ---- IP FETCHING ----
+        $ip = request()->ip();
+        // try {
+        //     $ip_info_request = Http::timeout(3)->get('http://api.ipify.org?format=json');
+        //     $ip = $ip_info_request->json()['ip'] ?? null;
+        // } catch (\Exception $e) {
+        //     \Log::warning("find IP failed: " . $e->getMessage());
+        // }
+
+        $country = 'Unknown';
+        if ($ip) {
+            try {
+                $response = Http::timeout(3)->get("http://ip-api.com/json/{$ip}?fields=status,country,countryCode");
+
+                if ($response->successful() && $response->json('status') === 'success') {
+                    $country = $response->json('country') ?? 'Unknown';
+                }
+            } catch (\Exception $e) {
+                \Log::warning("IP lookup failed for {$ip}: " . $e->getMessage());
+            }
 
             VisitorModel::create([
                 'id'       => Uuid::uuid4()->toString(),
@@ -159,9 +173,7 @@ class VisitorController extends Controller
                     'referer'    => request()->headers->get('referer'),
                 ]),
             ]);
-        } catch (\Exception $e) {
-            \Log::warning("Find IP failed: " . $e->getMessage());
-
+        } else {
             VisitorModel::create([
                 'id'       => Uuid::uuid4()->toString(),
                 'link_id'  => $link->id,
